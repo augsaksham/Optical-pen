@@ -1,0 +1,12 @@
+Keyboard Key Bindings:
+
+1. "+" Increase text size
+2. "-" Decrease text size
+3. "/" Increase spacing time
+4. "*" Decrease spacing time
+5. "," Delete previous word
+6. "s" Save the current window
+7. "r" Reset the console
+8. "d" Clear the screen
+9. "q" Quit the program and generate the final output
+10. 1-9 For changing the pen colour
