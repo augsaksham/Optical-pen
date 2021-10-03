@@ -3,19 +3,30 @@ from numpy.core.fromnumeric import size
 import time
 import numpy as np
 import sys
+import os
 import cv2 as cv
-# print("Installing extra Libraries")
+import threading
+from subprocess import call
+print("Installing extra Libraries")
+subprocess.check_call([sys.executable, '-m', 'pip', 'install',
+                       'keyboard'])
+subprocess.check_call([sys.executable, '-m', 'pip', 'install',
+                       'Pillow'])
+subprocess.check_call([sys.executable, '-m', 'pip', 'install',
+                       'pyserial'])
 # subprocess.check_call([sys.executable, '-m', 'pip', 'install',
-#                        'keyboard'])
-# subprocess.check_call([sys.executable, '-m', 'pip', 'install',
-#                        'Pillow'])
-# subprocess.check_call([sys.executable, '-m', 'pip', 'install',
-#                        'pyserial'])
-# print('Succesfully installed')
+#                        'editdistance==0.5.2'])
+subprocess.check_call([sys.executable, '-m', 'pip', 'install',
+                       'lmdb'])
+subprocess.check_call([sys.executable, '-m', 'pip', 'install',
+                       'path'])           
+print('Succesfully installed')
 from PIL import ImageGrab
 import serial
 import keyboard
-
+def thread_second():
+    print("Started thread")
+    call(["python", "main.py"])
 time_threshold = 0.5  # global space time variable
 colour = (0, 0, 0)  # global colour variable
 cursour_colour = list([255, 0, 255])  # global cursor colour varialble
@@ -191,6 +202,11 @@ def crop_image():
     img_final_out[(occu_pixels_final[0] + 5):(occu_pixels_final[0] + 5 + ranges[0]),  occu_pixels_final[1]+5:(ranges[1] + 5+occu_pixels_final[1]), :] = im_tmp_out
     x += 30
     y = 300
+    print("Current Working Directory " , os.getcwd())
+    im_ou = img_out[bounding_coordinates[1] - 15:bounding_coordinates[2] + 15,bounding_coordinates[0] - 10:bounding_coordinates[3] + 15, :]
+    im_tp_ot = cv.resize(im_ou, (77 , 147))
+    processThread = threading.Thread(target=thread_second)  # <- note extra ','
+    processThread.start()
 
     prevx=x
     prevy=y
@@ -293,8 +309,7 @@ while True and in_break==1:
             chk_time = 0
             print("Cancelling timer due to origin")
         else:
-            im = img_out[bounding_coordinates[1] - 15:bounding_coordinates[2] + 15,
-                 bounding_coordinates[0] - 10:bounding_coordinates[3] + 15, :]
+            im = img_out[bounding_coordinates[1] - 15:bounding_coordinates[2] + 15,bounding_coordinates[0] - 10:bounding_coordinates[3] + 15, :]
             im_tmp_out = cv.resize(im, ((bounding_coordinates[3] - bounding_coordinates[0] + 30) // 5, 55))
             ranges = im_tmp_out.shape
 
