@@ -7,6 +7,7 @@ import os
 import cv2 as cv
 import threading
 from subprocess import call
+
 print("Installing extra Libraries")
 subprocess.check_call([sys.executable, '-m', 'pip', 'install',
                        'keyboard'])
@@ -19,14 +20,12 @@ subprocess.check_call([sys.executable, '-m', 'pip', 'install',
 subprocess.check_call([sys.executable, '-m', 'pip', 'install',
                        'lmdb'])
 subprocess.check_call([sys.executable, '-m', 'pip', 'install',
-                       'path'])           
+                       'path'])
 print('Succesfully installed')
 from PIL import ImageGrab
 import serial
 import keyboard
-def thread_second():
-    print("Started thread")
-    call(["python", "main.py"])
+
 time_threshold = 0.5  # global space time variable
 colour = (0, 0, 0)  # global colour variable
 cursour_colour = list([255, 0, 255])  # global cursor colour varialble
@@ -34,17 +33,18 @@ cnt = 0  # used to keep save count
 btn = 1  # global button value
 num_line = 1  # fot out pallet
 nm_line = 1  # for final image
-in_break=1
-ranges=[0,0,0] #previous image pixels
+in_break = 1
+ranges = [0, 0, 0]  # previous image pixels
 occupied_pixels = [0, 0]  # global; values of pixels which are used in output panel
 occu_pixels_final = [0, 0]
 text_size = 4  # global text size variable
-in_cnt=0
-range_prev= []
-char_written=0
-cursor=(0,0)
-prev_cursor=(0,0)
-count=100
+in_cnt = 0
+range_prev = []
+char_written = 0
+cursor = (0, 0)
+prev_cursor = (0, 0)
+count = 100
+pen_photo = np.zeros((1050, 600))
 
 try:
     ser = serial.Serial('COM4', 9600, timeout=1)
@@ -68,7 +68,7 @@ def vconcat_resize_min(im_list, interpolation=cv.INTER_CUBIC):
 
 
 def handel_key_press():
-    global colour, cnt, text_size,char_written,in_cnt,time_threshold, img_out, ranges,prevy, prevx, x, y, occu_pixels_final, nm_line, num_line, bounding_coordinates, occupied_pixels, img_out_palette, img_final_out, in_break, range_prev
+    global colour, cnt, text_size, char_written, in_cnt, time_threshold, img_out, ranges, prevy, prevx, x, y, occu_pixels_final, nm_line, num_line, bounding_coordinates, occupied_pixels, img_out_palette, img_final_out, in_break, range_prev
     try:
         if keyboard.is_pressed('1'):
             print('You Pressed Red!')
@@ -95,24 +95,27 @@ def handel_key_press():
             print('You Pressed Black!')
             colour = (0, 0, 0)
         elif keyboard.is_pressed(','):
-            in_cnt+=1
-            if (in_cnt>=4):
+            in_cnt += 1
+            if (in_cnt >= 4):
                 print('You Pressed delete!')
 
-                if char_written==0:
+                if char_written == 0:
                     print("No previous record")
                 else:
-                    rnges=range_prev[char_written-1]
-                    img_out_palette[(4+60*(num_line-1)):(65+60*(num_line-1)), occupied_pixels[1]-0-rnges[1]:(occupied_pixels[1]), 0]=176
-                    img_out_palette[(4+60*(num_line-1)):(65+60*(num_line-1)), occupied_pixels[1]-0-rnges[1]:(occupied_pixels[1]), 1]=228
-                    img_out_palette[(4+60*(num_line-1)):(65+60*(num_line-1)), occupied_pixels[1]-0-rnges[1]:(occupied_pixels[1]), 2]=239
-                    occupied_pixels= [(num_line-1)*60,occupied_pixels[1]-5-rnges[1]]
-                    if occupied_pixels[1]<10 and num_line==2:
-                        num_line-=1
-                    range_prev.pop((char_written-1))
-                    char_written-=1
-                in_cnt=0
-                print('changed occupied pixels = ',occupied_pixels)
+                    rnges = range_prev[char_written - 1]
+                    img_out_palette[(4 + 60 * (num_line - 1)):(65 + 60 * (num_line - 1)),
+                    occupied_pixels[1] - 0 - rnges[1]:(occupied_pixels[1]), 0] = 176
+                    img_out_palette[(4 + 60 * (num_line - 1)):(65 + 60 * (num_line - 1)),
+                    occupied_pixels[1] - 0 - rnges[1]:(occupied_pixels[1]), 1] = 228
+                    img_out_palette[(4 + 60 * (num_line - 1)):(65 + 60 * (num_line - 1)),
+                    occupied_pixels[1] - 0 - rnges[1]:(occupied_pixels[1]), 2] = 239
+                    occupied_pixels = [(num_line - 1) * 60, occupied_pixels[1] - 5 - rnges[1]]
+                    if occupied_pixels[1] < 10 and num_line == 2:
+                        num_line -= 1
+                    range_prev.pop((char_written - 1))
+                    char_written -= 1
+                in_cnt = 0
+                print('changed occupied pixels = ', occupied_pixels)
 
         elif keyboard.is_pressed('9'):
             print('You Pressed Purple!')
@@ -137,13 +140,13 @@ def handel_key_press():
         elif keyboard.is_pressed('+'):
             print('You Pressed +')
             text_size = text_size + 1
-            if text_size>8:
-                text_size=7
+            if text_size > 8:
+                text_size = 7
         elif keyboard.is_pressed('-'):
             print('You Pressed -')
             text_size = text_size - 1
-            if text_size<1:
-                text_size=1
+            if text_size < 1:
+                text_size = 1
         elif keyboard.is_pressed('/'):
             print('You Pressed time increase')
             time_threshold += 0.1
@@ -152,9 +155,9 @@ def handel_key_press():
             time_threshold -= 0.1
         elif keyboard.is_pressed('q'):
             print('You Pressed quit')
-            img_final_out= img_final_out[0:nm_line*50,:,:]
+            img_final_out = img_final_out[0:nm_line * 50, :, :]
             cv.imwrite('Save/Final_out.png', img_final_out)
-            in_break=0
+            in_break = 0
             sys.exit()
         elif keyboard.is_pressed('r'):
             print('You Pressed reset')
@@ -165,13 +168,13 @@ def handel_key_press():
             x = 100
             bounding_coordinates = [1040, 1040, 0, 0]
             num_line = 1
-            ranges=[0,0,0]
+            ranges = [0, 0, 0]
             img_out_palette = cv.resize(cv.imread('resource/img_plt_out.png'), (1050, 150))
             img_final_out = np.ones((1100, 4000, 3)) * 255
             occupied_pixels = [0, 0]
             occu_pixels_final = [0, 0]
-            char_written=0
-            range_prev=[]
+            char_written = 0
+            range_prev = []
             nm_line = 1
             y = 300
     except:
@@ -192,24 +195,26 @@ def get_input():
 
 
 def crop_image():
-    global prevx, prevy, chk_time, cheked_time, bounding_coordinates, occupied_pixels, num_line, x, y, ranges, img_final_out, nm_line, occu_pixels_final
+    global im, prevx, prevy, chk_time, cheked_time, bounding_coordinates, occupied_pixels, num_line, x, y, ranges, img_final_out, nm_line, occu_pixels_final
 
-    img_out_palette[(occupied_pixels[0] + 5):(occupied_pixels[0] + 5 + ranges[0]), occupied_pixels[1]+5:(ranges[1] + 5+occupied_pixels[1]), :] = im_tmp_out
+    img_out_palette[(occupied_pixels[0] + 5):(occupied_pixels[0] + 5 + ranges[0]),
+    occupied_pixels[1] + 5:(ranges[1] + 5 + occupied_pixels[1]), :] = im_tmp_out
+    im_ou = img_out[bounding_coordinates[1] - 15:bounding_coordinates[2] + 15,
+            bounding_coordinates[0] - 10:bounding_coordinates[3] + 15, :]
     occupied_pixels = [(num_line - 1) * 60, occupied_pixels[1] + ranges[1] + 5]
     occu_pixels_final = [(nm_line - 1) * 60, occupied_pixels[1] + ranges[1] + 5]
     print('giving space')
-    img_out[bounding_coordinates[1] - 15:bounding_coordinates[2] + 15, bounding_coordinates[0] - 10:bounding_coordinates[3] + 15, :] = 255
-    img_final_out[(occu_pixels_final[0] + 5):(occu_pixels_final[0] + 5 + ranges[0]),  occu_pixels_final[1]+5:(ranges[1] + 5+occu_pixels_final[1]), :] = im_tmp_out
+    img_out[bounding_coordinates[1] - 15:bounding_coordinates[2] + 15,
+    bounding_coordinates[0] - 10:bounding_coordinates[3] + 15, :] = 255
+    img_final_out[(occu_pixels_final[0] + 5):(occu_pixels_final[0] + 5 + ranges[0]),
+    occu_pixels_final[1] + 5:(ranges[1] + 5 + occu_pixels_final[1]), :] = im_tmp_out
     x += 30
     y = 300
-    print("Current Working Directory " , os.getcwd())
-    im_ou = img_out[bounding_coordinates[1] - 15:bounding_coordinates[2] + 15,bounding_coordinates[0] - 10:bounding_coordinates[3] + 15, :]
-    im_tp_ot = cv.resize(im_ou, (77 , 147))
-    processThread = threading.Thread(target=thread_second)  # <- note extra ','
-    processThread.start()
+    print("Current Working Directory ", os.getcwd())
+    im_tp_ot = cv.resize(im_tmp_out, (147, 77))
 
-    prevx=x
-    prevy=y
+    prevx = x
+    prevy = y
 
     bounding_coordinates[0] = x
     bounding_coordinates[1] = 1040
@@ -223,18 +228,19 @@ pallete = cv.resize(cv.imread('resource/plt.png'), (150, 755))
 clr = cv.resize(cv.imread('resource/current_colour.png'), (150, 50))
 instructions = cv.resize(cv.imread('resource/instructions.png'), (1050, 50))
 img_out = cv.resize(cv.imread('resource/main_plt.png'), (1050, 600))
+pen_photo = img_out.copy()
 img_out = cv.line(img_out, (50, 300), (1000, 300), (255, 0, 255), 1)
 img_out_palette = cv.resize(cv.imread('resource/img_plt_out.png'), (1050, 150))
 img_pad1 = cv.resize(cv.imread('resource/padding_colour.png'), (1050, 5))
 img_pad2 = cv.resize(cv.imread('resource/padding_colour.png'), (1215, 5))
 img_pad3 = cv.resize(cv.imread('resource/padding_colour.png'), (5, 810))
-img_final_out = np.ones((1100, 4000, 3)) * 255
+img_final_out = np.ones((1100, 1100, 3)) * 255
 img_pad4 = cv.resize(cv.imread('resource/padding_colour.png'), (150, 5))
 
 chk_time = 0
 cheked_time = 0
 
-while True and in_break==1:
+while True and in_break == 1:
 
     try:
         text = ser.readline()
@@ -256,6 +262,10 @@ while True and in_break==1:
     img_final = cv.hconcat([img_concat, im_v_resize])
     img_final = cv.vconcat([img_final, img_pad2])
     cv.imshow('Smart Pen', img_final)
+    if (not btn):
+        print('456')
+        img_out = pen_photo.copy()
+
     handel_key_press()
     clr[:, :, 0] = colour[0]
     clr[:, :, 1] = colour[1]
@@ -269,15 +279,16 @@ while True and in_break==1:
     except:
         print('Pen not activated')
 
-
     if numbers[2] == 111:
 
-        if cl == 6:
+        if cl == 5:
             btn = not btn
             if (not btn):
                 print('pen up')
+                pen_photo = img_out.copy()
             else:
                 print('pen down')
+                img_out = pen_photo.copy()
             cl = 0
 
         cl += 1
@@ -291,17 +302,17 @@ while True and in_break==1:
     bounding_coordinates[2] = max(bounding_coordinates[2], abs(y))
     bounding_coordinates[3] = max(bounding_coordinates[3], abs(x))
     # # code for giving space
-    if numbers[0] == 0 and numbers[1] == 0 and btn==1:
+    if numbers[0] == 0 and numbers[1] == 0 and btn == 1:
         chk_time = 1
         print('detected 0 movement')
     else:
         chk_time = 0
         cheked_time = 0
-    if (chk_time == 1 and cheked_time == 0 and btn==1):
+    if (chk_time == 1 and cheked_time == 0 and btn == 1):
         cheked_time = time.time()
         print('timer start')
 
-    if ((not (cheked_time == 0)) and (time.time() - cheked_time > time_threshold) and (btn==1)):
+    if ((not (cheked_time == 0)) and (time.time() - cheked_time > time_threshold) and (btn == 1)):
         print('timer exceeded')
 
         if (x == 100 and y == 300):
@@ -309,33 +320,36 @@ while True and in_break==1:
             chk_time = 0
             print("Cancelling timer due to origin")
         else:
-            im = img_out[bounding_coordinates[1] - 15:bounding_coordinates[2] + 15,bounding_coordinates[0] - 10:bounding_coordinates[3] + 15, :]
+            img_out = cv.line(img_out, (50, 300), (1000, 300), (255, 255, 255), 1)
+            im = img_out[bounding_coordinates[1] - 15:bounding_coordinates[2] + 15,
+                 bounding_coordinates[0] - 10:bounding_coordinates[3] + 15, :]
             im_tmp_out = cv.resize(im, ((bounding_coordinates[3] - bounding_coordinates[0] + 30) // 5, 55))
             ranges = im_tmp_out.shape
+            img_out = cv.line(img_out, (50, 300), (1000, 300), (255, 0, 255), 1)
 
             if ranges[1] >= 15:
                 range_prev.append(ranges)
-                char_written+=1
+                char_written += 1
 
-                if (1000 - occupied_pixels[1] - 10) >= ranges[1]+10:
+                if (1000 - occupied_pixels[1] - 10) >= ranges[1] + 10:
                     crop_image()
-                elif (not ((1000 - occupied_pixels[1] - 10) >= ranges[1]+10)) and num_line == 1:
+                elif (not ((1000 - occupied_pixels[1] - 10) >= ranges[1] + 10)) and num_line == 1:
                     num_line += 1
                     nm_line += 1
-                    occupied_pixels[0]=60
+                    occupied_pixels[0] = 60
                     occupied_pixels[1] = 0
                     occu_pixels_final[1] = 0
                     crop_image()
-                elif (not ((1000 - occupied_pixels[1] - 10) >=  ranges[1]+10)) and num_line == 2:
+                elif (not ((1000 - occupied_pixels[1] - 10) >= ranges[1] + 10)) and num_line == 2:
                     print('Cleaning workspace and allocating')
                     num_line = 1
                     nm_line += 1
                     occupied_pixels = [0, 0]
                     occu_pixels_final[1] = 0
                     img_out_palette = cv.resize(cv.imread('resource/img_plt_out.png'), (1050, 150))
-                    if (((1000 - occupied_pixels[1] - 10) >= ranges[1]+10)):
+                    if (((1000 - occupied_pixels[1] - 10) >= ranges[1] + 10)):
                         crop_image()
-                    else :
+                    else:
                         print('Input too large for output panel dicarding ........ ')
             else:
                 print("cancelling timer due to very small character")
@@ -353,22 +367,15 @@ while True and in_break==1:
 
     elif y < 0:
         y = 0
-        
 
     if (btn):
-        cv.line(img_out, (prevx, prevy), (x, y), colour, text_size)
+        img_out = cv.line(img_out, (prevx, prevy), (x, y), colour, text_size)
 
     prevx = x
     prevy = y
     img_out = cv.line(img_out, (50, 300), (1000, 300), (255, 0, 255), 1)
 
     if not btn:
-
-        img_out= cv.circle(img_out, prev_cursor, 2, (255,255,255), -1)
-        cursor = (x,y)
-        img_out= cv.circle(img_out,cursor,2,(0,0,255),-1)
-        prev_cursor = cursor
-        count=0
-    count+=1
+        cv.circle(img_out, (x, y), 4, (0, 0, 255), 2)
 
     cv.waitKey(1)
