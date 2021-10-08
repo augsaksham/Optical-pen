@@ -1,12 +1,8 @@
 import subprocess
-from numpy.core.fromnumeric import size
 import time
 import numpy as np
 import sys
-import os
 import cv2 as cv
-import threading
-from subprocess import call
 
 print("Installing extra Libraries")
 subprocess.check_call([sys.executable, '-m', 'pip', 'install',
@@ -15,8 +11,6 @@ subprocess.check_call([sys.executable, '-m', 'pip', 'install',
                        'Pillow'])
 subprocess.check_call([sys.executable, '-m', 'pip', 'install',
                        'pyserial'])
-# subprocess.check_call([sys.executable, '-m', 'pip', 'install',
-#                        'editdistance==0.5.2'])
 subprocess.check_call([sys.executable, '-m', 'pip', 'install',
                        'lmdb'])
 subprocess.check_call([sys.executable, '-m', 'pip', 'install',
@@ -68,7 +62,7 @@ def vconcat_resize_min(im_list, interpolation=cv.INTER_CUBIC):
 
 
 def handel_key_press():
-    global colour, cnt, text_size, char_written, in_cnt, time_threshold, img_out, ranges, prevy, prevx, x, y, occu_pixels_final, nm_line, num_line, bounding_coordinates, occupied_pixels, img_out_palette, img_final_out, in_break, range_prev
+    global pen_photo, colour, cnt, text_size, char_written, in_cnt, time_threshold, img_out, ranges, prevy, prevx, x, y, occu_pixels_final, nm_line, num_line, bounding_coordinates, occupied_pixels, img_out_palette, img_final_out, in_break, range_prev
     try:
         if keyboard.is_pressed('1'):
             print('You Pressed Red!')
@@ -155,7 +149,7 @@ def handel_key_press():
             time_threshold -= 0.1
         elif keyboard.is_pressed('q'):
             print('You Pressed quit')
-            img_final_out = img_final_out[0:nm_line * 50, :, :]
+            img_final_out = img_final_out[0:nm_line * 60+20, :, :]
             cv.imwrite('Save/Final_out.png', img_final_out)
             in_break = 0
             sys.exit()
@@ -177,6 +171,7 @@ def handel_key_press():
             range_prev = []
             nm_line = 1
             y = 300
+            pen_photo = img_out.copy()
     except:
         print('nothing pressed')
 
@@ -199,20 +194,19 @@ def crop_image():
 
     img_out_palette[(occupied_pixels[0] + 5):(occupied_pixels[0] + 5 + ranges[0]),
     occupied_pixels[1] + 5:(ranges[1] + 5 + occupied_pixels[1]), :] = im_tmp_out
-    im_ou = img_out[bounding_coordinates[1] - 15:bounding_coordinates[2] + 15,
-            bounding_coordinates[0] - 10:bounding_coordinates[3] + 15, :]
+    tmp= occupied_pixels[1]
+
+    img_final_out[(occu_pixels_final[0] + 5):(occu_pixels_final[0] + 5 + ranges[0]),
+    occu_pixels_final[1] + 5:(ranges[1] + 5 + occu_pixels_final[1]), :] = im_tmp_out
+
     occupied_pixels = [(num_line - 1) * 60, occupied_pixels[1] + ranges[1] + 5]
-    occu_pixels_final = [(nm_line - 1) * 60, occupied_pixels[1] + ranges[1] + 5]
+    occu_pixels_final = [(nm_line - 1) * 60, tmp + ranges[1] + 10]
     print('giving space')
     img_out[bounding_coordinates[1] - 15:bounding_coordinates[2] + 15,
     bounding_coordinates[0] - 10:bounding_coordinates[3] + 15, :] = 255
-    img_final_out[(occu_pixels_final[0] + 5):(occu_pixels_final[0] + 5 + ranges[0]),
-    occu_pixels_final[1] + 5:(ranges[1] + 5 + occu_pixels_final[1]), :] = im_tmp_out
     x += 30
     y = 300
-    print("Current Working Directory ", os.getcwd())
-    im_tp_ot = cv.resize(im_tmp_out, (147, 77))
-
+    
     prevx = x
     prevy = y
 
@@ -263,7 +257,7 @@ while True and in_break == 1:
     img_final = cv.vconcat([img_final, img_pad2])
     cv.imshow('Smart Pen', img_final)
     if (not btn):
-        print('456')
+        print('PEN UP')
         img_out = pen_photo.copy()
 
     handel_key_press()
@@ -304,21 +298,18 @@ while True and in_break == 1:
     # # code for giving space
     if numbers[0] == 0 and numbers[1] == 0 and btn == 1:
         chk_time = 1
-        print('detected 0 movement')
     else:
         chk_time = 0
         cheked_time = 0
     if (chk_time == 1 and cheked_time == 0 and btn == 1):
         cheked_time = time.time()
-        print('timer start')
 
     if ((not (cheked_time == 0)) and (time.time() - cheked_time > time_threshold) and (btn == 1)):
-        print('timer exceeded')
 
         if (x == 100 and y == 300):
             cheked_time = 0
             chk_time = 0
-            print("Cancelling timer due to origin")
+
         else:
             img_out = cv.line(img_out, (50, 300), (1000, 300), (255, 255, 255), 1)
             im = img_out[bounding_coordinates[1] - 15:bounding_coordinates[2] + 15,
